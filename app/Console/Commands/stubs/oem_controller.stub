@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Http\Controllers\Tenant;
+
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller as BaseController;
+use ZhenMu\Support\Traits\ResponseTrait;
+
+class OemController extends BaseController
+{
+    use ResponseTrait;
+
+    public function detail()
+    {
+        return $this->success(tenant()->getDetail());
+    }
+}

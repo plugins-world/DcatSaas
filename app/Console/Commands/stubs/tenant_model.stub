@@ -1,0 +1,46 @@
+<?php
+
+namespace $NAMESPACE$\Models;
+
+use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
+use Stancl\Tenancy\Contracts\TenantWithDatabase;
+use Stancl\Tenancy\Database\Concerns\HasDatabase;
+use Stancl\Tenancy\Database\Concerns\HasDomains;
+
+class Tenant extends BaseTenant implements TenantWithDatabase
+{
+    use HasDatabase, HasDomains;
+
+    protected $guarded = [];
+
+    protected $hidden = [
+        'admin_user_password',
+        'admin_user_password_confirmation',
+        'tenancy_db_name',
+    ];
+
+    public static function getCustomColumns(): array
+    {
+        return [
+            'id',
+            'created_at',
+            'updated_at',
+        ];
+    }
+
+    public function getDetail()
+    {
+        $domains = $this->domains->map(fn ($item) => [
+            'domain_id' => $item->id,
+            'domain' => $item->domain,
+        ]);
+
+        return [
+            'api' => 'http://'.$domains->value('domain'),
+            'tenant_id' => $this->id,
+            'admin_user_name' => $this->admin_user_name,
+            'admin_user_username' => $this->admin_user_username,
+            'domains' => $domains,
+        ];
+    }
+}

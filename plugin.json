@@ -1,0 +1,17 @@
+{
+    "unikey": "DcatSaas",
+    "type": 1,
+    "name": "DcatSaas",
+    "description": "DcatSaas plugin made by mouyong",
+    "author": "mouyong",
+    "authorLink": "https://github.com/mouyong",
+    "version": "1.0.0",
+    "scene": [],
+    "accessPath": "",
+    "settingPath": null,
+    "providers": [
+        "Plugins\\DcatSaas\\Providers\\DcatSaasServiceProvider"
+    ],
+    "autoloadFiles": [],
+    "aliases": []
+}
