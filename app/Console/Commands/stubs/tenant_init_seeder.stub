@@ -1,0 +1,71 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class TenantInitSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        if (!config('admin.database.users_model')) {
+            return;
+        }
+
+        \App\Models\Tenant::all()->runForEach(function ($tenant) {
+            $userModel = config('admin.database.users_model');
+
+            if ($userModel::count() == 0) {
+                // 初始化租户后台信息
+                \Artisan::call('db:seed', ['--class' => \Dcat\Admin\Models\AdminTablesSeeder::class, '--force' => true]);
+                // 初始化租户菜单
+                if (class_exists(\Database\Seeders\TenantAdminTablesSeeder::class)) {
+                    \Artisan::call('db:seed', ['--class' => \Database\Seeders\TenantAdminTablesSeeder::class, '--force' => true]);
+                }
+
+                // 设置 admin 的密码
+                // config/app.php
+                //      'admin_password' => env('ADMIN_PASSWORD', 'admin'),
+                $userModel::where('username', 'admin')->update([
+                    'password' => bcrypt(config('app.admin_password', 'admin')),
+                ]);
+
+                // $this->tenantUpdate($tenant);
+            }
+        });
+
+        // 重置中心应用菜单
+        // \Artisan::call('db:seed', ['--class' => \Database\Seeders\AdminTablesSeeder::class]);
+    }
+
+    public static function tenantUpdate($tenant)
+    {
+        $userModel = config('admin.database.users_model');
+        $user = $userModel::where('username', $tenant->admin_user_username)->first();
+        if (!$user) {
+            $user = $userModel::create([
+                'name' => $tenant->admin_user_name,
+                'username' => $tenant->admin_user_username,
+                'password' => bcrypt($tenant->admin_user_password),
+            ]);
+
+            $roleModel = config('admin.database.roles_model');
+            $role = $roleModel::where('slug', 'administrator')->first();
+            if ($role) {
+                $user->roles()->attach($role);
+            }
+        } else {
+            $user->update([
+                'name' => $tenant->admin_user_name,
+                'password' => bcrypt($tenant->admin_user_password),
+            ]);
+        }
+    }
+}
