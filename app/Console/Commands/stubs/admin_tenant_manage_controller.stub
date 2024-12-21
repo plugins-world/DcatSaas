@@ -1,0 +1,86 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Models\Tenant;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+
+class TenantController extends Controller
+{
+    public function index()
+    {
+        $tenants = Tenant::with('domains')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return $this->paginate($tenants, fn ($item) => $item->getDetail());
+    }
+
+    public function store()
+    {
+        \request()->validate([
+            'mode' => ['required', Rule::in('add', 'edit')],
+            'id' => ['required', 'string', 'min:1', 'max:8'],
+            'admin_user_name' => ['required', 'string', 'min:1', 'max:255'],
+            'admin_user_username' => ['required', 'string', 'min:1', 'max:255'],
+            'admin_password' => ['nullable', 'string', 'min:1', 'max:255', 'confirmed'],
+        ]);
+
+        $tenantId = \request('id');
+        $mode = \request('mode');
+        $domain = "{$tenantId}." . \request()->getHost();
+
+        if ($mode == 'add' && empty($tenantId)) {
+            return $this->fail("租户 ID 不能为空");
+        }
+
+        $tenant = tenancy()->find($tenantId);
+        if ($mode == 'add' && $tenant) {
+            return $this->fail("租户 {$tenantId} 已存在");
+        }
+
+        // 保留原来的密码
+        if ($mode == 'edit' && empty(\request('admin_password'))) {
+            \request()->offsetSet('admin_password', $tenant->admin_password);
+        }
+
+        $input = [];
+        $input['id'] = \request('id');
+        $input['hospital_name'] = \request('hospital_name');
+        $input['department_name'] = \request('department_name');
+        $input['doctor_name'] = \request('doctor_name');
+        $input['doctor_username'] = \request('doctor_username');
+        $input['admin_password'] = \request('admin_password');
+
+        if (!$tenant) {
+            $tenant = Tenant::create($input);
+
+            $domain = "{$tenantId}." . \request()->getHost();
+            $tenant->domains()->create([
+                'domain' => $domain,
+            ]);
+        } else {
+            $tenant->update($input);
+        }
+
+        DB::transaction(function () use ($tenant) {
+            $tenant->run(fn ($tenant) => \Database\Seeders\TenantInitSeeder::tenantUpdate($tenant));
+        });
+
+        return $this->success([
+            'tenant_id' => $tenant->id,
+        ]);
+    }
+
+    public function destroy(string $tenantId)
+    {
+        $tenant1 = \App\Models\Tenant::find($tenantId);
+        $deleteResult = $tenant1?->delete();
+
+        return $this->success([
+            'delete_result' => $deleteResult,
+        ]);
+    }
+}
