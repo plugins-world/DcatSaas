@@ -1,0 +1,40 @@
+{
+    "name": "plugins-world/dcat-saas",
+    "description": "DcatSaas plugin for the laravel and dcat-saas",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "mouyong",
+            "email": "my24251325@gmail.com",
+            "homepage": "https://github.com/mouyong",
+            "role": "Creator & Developer"
+        }
+    ],
+    "homepage": "https://laravel-workerman.iwnweb.com",
+    "support": {
+        "email": "my24251325@gmail.com",
+        "source": "https://github.com/plugins-world/dcat-saas",
+        "issues": "https://laravel-workerman.iwnweb.com",
+        "forum": "https://laravel-workerman.iwnweb.com",
+        "wiki": "https://laravel-workerman.iwnweb.com"
+    },
+    "autoload": {
+        "psr-4": {
+            "Plugins\\DcatSaas\\": "app",
+            "Plugins\\DcatSaas\\Database\\Factories\\": "database/factories/",
+            "Plugins\\DcatSaas\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Plugins\\DcatSaas\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">= 8.0",
+        "stancl/tenancy": "^3.5",
+        "dcat/laravel-admin": "^2.0",
+        "zhenmu/support": "dev-master"
+    },
+    "minimum-stability": "dev"
+}
