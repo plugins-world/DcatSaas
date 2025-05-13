@@ -1,0 +1,90 @@
+<?php
+
+namespace App\Http\Controllers\Tenant;
+
+use Illuminate\Http\Request;
+use App\Utilities\AppUtility;
+use App\Models\HabitInformation;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Artisan;
+
+class GlobalController extends Controller
+{
+    public function clearCache()
+    {
+        Artisan::call('clear-compiled');
+        Artisan::call('auth:clear-resets');
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('event:clear');
+        Artisan::call('optimize:clear');
+        Artisan::call('queue:clear');
+        Artisan::call('route:clear');
+        Artisan::call('schedule:clear-cache');
+        Artisan::call('view:clear');
+        
+        return $this->success();
+    }
+
+    public function upload()
+    {
+        \request()->validate([
+            'file' => ['required', 'file'],
+            'type' => ['required', 'integer'],
+            'tenant_id' => ['nullable'],
+        ]);
+
+        $path = match (intval(\request('type'))) {
+            default => 'unknown',
+            1 => 'unknown',
+            2 => 'reports',
+            3 => 'heritage_application_materials',
+            4 => 'heritage_approval_results',
+            5 => 'ethics_application',
+            6 => 'ethical_approval_results',
+            7 => 'treat_attachments',
+            8 => 'sample_warehouses',
+            9 => 'images',
+            10 => 'avatars',
+        };
+
+        $tenantId = \request('tenant_id');
+        if (!$tenantId && !tenant()) {
+            $path = 'public/'.$path;
+        }
+
+        if ($tenantId) {
+            $tenant = tenancy()->find($tenantId);
+
+            $cmdWordResp = $tenant->run(function () use ($path) {
+                $cmdWordResp = \FresnsCmdWord::plugin('CSIM')->upload([
+                    'file' => \request('file'),
+                    'path' => $path,
+                ]);
+
+                return $cmdWordResp;
+            });
+        } else {
+            $cmdWordResp = \FresnsCmdWord::plugin('CSIM')->upload([
+                'file' => \request('file'),
+                'path' => $path,
+            ]);
+        }
+
+
+        return $this->success($cmdWordResp->getData());
+    }
+
+    public function getFileContent()
+    {
+        \request()->validate([
+            'file' => ['required', 'url'],
+        ]);
+
+        $content = file_get_contents(\request('file'));
+
+        return \response($content, 200, [
+            'content-type' => \ZhenMu\Support\Utils\File::mimeTypeFromContent($content),
+        ]);
+    }
+}
